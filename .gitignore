@@ -1,0 +1,21 @@
+# Ignore environment file containing API key
+OPENAI_API_KEY.env
+
+# Python-related ignores
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Virtual environment
+venv/
+env/
+.env
+
+# IDE-specific files
+.vscode/
+.idea/
+
+# OS-specific files
+.DS_Store
+Thumbs.db
+
