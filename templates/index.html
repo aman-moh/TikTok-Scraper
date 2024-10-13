@@ -5,32 +5,74 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>TikTok Link Dashboard</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
 </head>
-<body class="min-h-screen bg-gray-100 flex items-center justify-center p-4">
-    <div class="w-full max-w-md bg-white rounded-lg shadow-md overflow-hidden">
+<body class="bg-gray-100 min-h-screen flex items-center justify-center">
+    <div class="w-full max-w-2xl bg-white rounded-lg shadow-md overflow-hidden">
         <div class="p-6">
-            <h2 class="text-2xl font-bold text-center mb-6">TikTok Link Dashboard</h2>
-            <form method="POST" class="space-y-4">
-                <div class="space-y-2">
-                    <label for="tiktok-link" class="block text-sm font-medium text-gray-700">TikTok Link</label>
-                    <input type="text" id="tiktok-link" name="tiktok_link" placeholder="Enter TikTok link here"
-                           class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
-                </div>
-                <button type="submit"
-                        class="w-full bg-blue-600 text-white py-2 px-4 rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-colors">
-                    Confirm
-                </button>
+            <h1 id="tiktok-link-dashboard" class="text-2xl font-bold text-center mb-6">TikTok Link Dashboard</h1>
+            
+            <form id="analysis-form" class="space-y-2">
+                <input type="text" id="tiktok-link" name="tiktok_link" placeholder="Enter TikTok Link" class="w-full px-3 py-2 border rounded-md">
+                <button type="submit" class="w-full bg-blue-500 text-white py-2 rounded-md hover:bg-blue-600">Analyze</button>
             </form>
-            {% with messages = get_flashed_messages(with_categories=true) %}
-                {% if messages %}
-                    {% for category, message in messages %}
-                        <div class="mt-4 p-2 {% if category == 'error' %}bg-red-100 text-red-700{% else %}bg-green-100 text-green-700{% endif %} rounded-md">
-                            {{ message }}
-                        </div>
-                    {% endfor %}
-                {% endif %}
-            {% endwith %}
+
+            <div id="flash-messages" class="mt-4"></div>
+
+            <div id="analysis-results" class="mt-8 hidden">
+                <h2 class="text-xl font-semibold mb-4">Analysis Results</h2>
+                <div id="result-content" class="bg-gray-50 p-4 rounded-md"></div>
+            </div>
         </div>
     </div>
+
+    <script>
+        $(document).ready(function() {
+            $('#analysis-form').on('submit', function(e) {
+                e.preventDefault();
+                var tiktokLink = $('#tiktok-link').val();
+                
+                $.ajax({
+                    url: '/',
+                    method: 'POST',
+                    data: { tiktok_link: tiktokLink },
+                    beforeSend: function() {
+                        $('#flash-messages').html('<div class="p-2 bg-blue-100 text-blue-700 rounded-md">Analyzing...</div>');
+                    },
+                    success: function(response) {
+                        $('#flash-messages').html('<div class="p-2 bg-green-100 text-green-700 rounded-md">Analysis completed successfully!</div>');
+                        displayResults(response);
+                    },
+                    error: function(xhr) {
+                        $('#flash-messages').html('<div class="p-2 bg-red-100 text-red-700 rounded-md">' + xhr.responseJSON.error + '</div>');
+                    }
+                });
+            });
+
+            function displayResults(result) {
+                var content = `
+                    <p><strong>Task:</strong> ${result.task}</p>
+                    <div class="mb-4">
+                        <h3 class="font-semibold mb-2">Hook Script:</h3>
+                        <p><strong>Content:</strong> ${result.hook_script.content}</p>
+                        <p><strong>Total Words:</strong> ${result.hook_script.total_length_in_words}</p>
+                    </div>
+                    <div>
+                        <h3 class="font-semibold mb-2">Sentences:</h3>
+                        <ul>
+                            ${result.hook_script.sentences.map(sentence => `
+                                <li class="mb-2">
+                                    <p>${sentence.sentence}</p>
+                                    <p>Words: ${sentence.length_in_words}</p>
+                                </li>
+                            `).join('')}
+                        </ul>
+                    </div>
+                `;
+                $('#result-content').html(content);
+                $('#analysis-results').removeClass('hidden');
+            }
+        });
+    </script>
 </body>
 </html>
