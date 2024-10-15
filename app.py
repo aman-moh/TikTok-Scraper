@@ -1,4 +1,4 @@
-from flask import Flask, render_template, request, flash, jsonify   
+from flask import Flask, render_template, request, jsonify
 from camel.agents.chat_agent import ChatAgent
 from camel.configs.openai_config import ChatGPTConfig
 from camel.messages.base import BaseMessage
@@ -12,7 +12,7 @@ import json
 import os
 
 app = Flask(__name__)
-app.secret_key = os.getenv("FLASK_SECRET_KEY")
+app.secret_key = os.getenv("FLASK_SECRET_KEY", "default_secret_key")
 
 nest_asyncio.apply()
 
@@ -130,15 +130,18 @@ def dashboard():
 
             workforce = create_workforce()
             task = workforce.process_task(human_task)
-            result = json.loads(task.result)
             
-            if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
-                return jsonify(result)
-            else:
-                flash('Analysis completed successfully!', 'success')
-                return render_template('index.html', result=result)
+            try:
+                result = json.loads(task.result)
+            except json.JSONDecodeError:
+                # If the result is not valid JSON, return it as plain text
+                return jsonify({
+                    'error': 'Invalid JSON result',
+                    'raw_result': task.result
+                })
+            
+            return jsonify(result)
         else:
-            flash('Please enter a TikTok link.', 'error')
             return jsonify({'error': 'Please enter a TikTok link.'}), 400
     
     return render_template('index.html')
